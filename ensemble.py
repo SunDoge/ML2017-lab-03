@@ -1,10 +1,13 @@
 import pickle
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+
 
 
 class AdaBoostClassifier:
     '''A simple AdaBoost Classifier.'''
 
-    def __init__(self, weak_classifier, n_weakers_limit):
+    def __init__(self, weak_classifier=DecisionTreeClassifier, n_weakers_limit=1000):
         '''Initialize AdaBoostClassifier
 
         Args:
@@ -18,15 +21,34 @@ class AdaBoostClassifier:
         '''Optional'''
         pass
 
-    def fit(self,X,y):
+    def fit(self, X, y):
         '''Build a boosted classifier from the training set (X, y).
 
         Args:
             X: An ndarray indicating the samples to be trained, which shape should be (n_samples,n_features).
             y: An ndarray indicating the ground-truth labels correspond to X, which shape should be (n_samples,1).
         '''
-        pass
+        n_features = X.shape[0]
+        # clear weights
+        self.w = np.ones(n_features) / n_features
+        self.models = []
+        self.alphas = []
+        # print(self.w)
+        # max_depth = None
+        for iboost in range(self.n_weakers_limit):
+            weak_classifier = self.weak_classifier()
+            weak_classifier.fit(X, y, sample_weight=self.w)
+            y_pred = weak_classifier.predict(X)
 
+            error = self.w.dot(y_pred)
+            alpha = np.log((1 - error) / error)
+            self.w = w * np.exp(-alpha * y * y_pred)
+            self.w = self.w / self.w.sum()
+
+            self.models[iboost] = weak_classifier
+            self.alphas[iboost] = alpha
+
+        return self
 
     def predict_scores(self, X):
         '''Calculate the weighted sum score of the whole base classifiers for given samples.

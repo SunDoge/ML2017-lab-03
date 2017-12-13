@@ -1,5 +1,6 @@
 import pickle
 
+
 class AdaBoostClassifier:
     '''A simple AdaBoost Classifier.'''
 
@@ -10,7 +11,8 @@ class AdaBoostClassifier:
             weak_classifier: The class of weak classifier, which is recommend to be sklearn.tree.DecisionTreeClassifier.
             n_weakers_limit: The maximum number of weak classifier the model can use.
         '''
-        pass
+        self.weak_classifier = weak_classifier
+        self.n_weakers_limit = n_weakers_limit
 
     def is_good_enough(self):
         '''Optional'''

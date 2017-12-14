@@ -4,7 +4,7 @@ from sklearn.ensemble import AdaBoostClassifier as SkAdaBoostClassifier
 
 
 def main():
-    clf = AdaBoostClassifier()
+    clf = AdaBoostClassifier(n_weakers_limit=10)
     X_train = np.array([
         [1, 1],
         [1, 0],
@@ -20,6 +20,7 @@ def main():
     ])
 
     clf.fit(X_train, y_train)
+    print(clf.predict(X_train))
 
 
 if __name__ == '__main__':

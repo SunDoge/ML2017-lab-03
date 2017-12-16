@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import LabelEncoder
 
 
 
@@ -16,6 +17,7 @@ class AdaBoostClassifier:
         '''
         self.weak_classifier = weak_classifier
         self.n_weakers_limit = n_weakers_limit
+        self.le = LabelEncoder()
 
     def is_good_enough(self):
         '''Optional'''
@@ -29,6 +31,9 @@ class AdaBoostClassifier:
             y: An ndarray indicating the ground-truth labels correspond to X, which shape should be (n_samples,1).
         '''
         n_features = X.shape[0]
+        # Label encode y
+        y = self.le.fit_transform(y)
+        epsilon = 0.00001
         # clear weights
         self.w = np.ones(n_features) / n_features
         self.models = []
@@ -40,13 +45,16 @@ class AdaBoostClassifier:
             weak_classifier.fit(X, y, sample_weight=self.w)
             y_pred = weak_classifier.predict(X)
 
-            error = self.w.dot(y_pred)
-            alpha = np.log((1 - error) / error)
-            self.w = w * np.exp(-alpha * y * y_pred)
+            error = self.w.dot(y_pred != y)
+            error = 0.1 * self.w.min() if error == 0 else error
+
+            alpha = 0.5 * np.log((1 - error) / error)
+
+            self.w = self.w * np.exp(-alpha * y * y_pred)
             self.w = self.w / self.w.sum()
 
-            self.models[iboost] = weak_classifier
-            self.alphas[iboost] = alpha
+            self.models.append(weak_classifier)
+            self.alphas.append(alpha)
 
         return self
 
@@ -71,7 +79,14 @@ class AdaBoostClassifier:
         Returns:
             An ndarray consists of predicted labels, which shape should be (n_samples,1).
         '''
-        pass
+        y_pred = np.zeros(X.shape[0])
+        for alpha, clf in zip(self.alphas, self.models):
+            y_pred += alpha * clf.predict(X)
+            # print(alpha)
+
+        y_pred = np.sign(y_pred)
+        # print(y_pred)
+        return self.le.inverse_transform(y_pred.astype(int))
 
     @staticmethod
     def save(model, filename):

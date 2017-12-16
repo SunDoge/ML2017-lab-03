@@ -33,7 +33,7 @@ class AdaBoostClassifier:
         n_features = X.shape[0]
         # Label encode y
         y = self.le.fit_transform(y)
-        epsilon = 0.00001
+        epsilon = 0.1
         # clear weights
         self.w = np.ones(n_features) / n_features
         self.models = []
@@ -44,11 +44,15 @@ class AdaBoostClassifier:
             weak_classifier = self.weak_classifier()
             weak_classifier.fit(X, y, sample_weight=self.w)
             y_pred = weak_classifier.predict(X)
+            # print(iboost)
+            # print(y_pred)
 
             error = self.w.dot(y_pred != y)
-            error = 0.1 * self.w.min() if error == 0 else error
+            # print(error)
+            # error = 0.1 * self.w.min() if error == 0 else error
 
-            alpha = 0.5 * np.log((1 - error) / error)
+            alpha = 0.5 * np.log((1 - error + epsilon) / (error + epsilon))
+            # print(alpha)
 
             self.w = self.w * np.exp(-alpha * y * y_pred)
             self.w = self.w / self.w.sum()
@@ -97,3 +101,33 @@ class AdaBoostClassifier:
     def load(filename):
         with open(filename, "rb") as f:
             return pickle.load(f)
+
+
+if method == 'gd':            
+    grad = gradient(X_batch, y_batch, w)
+    w -= learning_rate * grad
+    
+elif method == 'NAG':
+    grad = gradient(X_batch, y_batch, w - gamma * v)
+    v = gamma * v + learning_rate * grad
+    w -= v
+    
+elif method == 'RMSProp':
+    grad = gradient(X_batch, y_batch, w)
+    G = gamma * G + (1 - gamma) * np.square(grad)
+    w -= learning_rate * 100 * grad / np.sqrt(G + epsilon)
+    
+elif method == 'AdaDelta':
+    grad = gradient(X_batch, y_batch, w)
+    G = gamma * G + (1 - gamma)* np.square(grad)
+    dw = -np.sqrt(delta + epsilon) / np.sqrt(G + epsilon) * grad
+    w += dw
+    delta = gamma * delta + (1 - gamma) * np.square(delta)
+    
+elif method == 'Adam':
+    t = i + 1
+    grad = gradient(X_batch, y_batch, w)
+    m = beta * m + (1 - beta) * grad
+    G = gamma * G + (1 - gamma) * np.square(grad)
+    alpha = learning_rate * 100 * np.sqrt(1 - gamma ** t) / (1 - beta ** t)
+    w -= alpha * m / np.sqrt(G + epsilon)

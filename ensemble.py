@@ -16,7 +16,7 @@ class AdaBoostClassifier:
         '''
         self.weak_classifier = weak_classifier
         self.n_weakers_limit = n_weakers_limit
-        self.learning_rate = 1.0
+        self.learning_rate = 0.5
         self.le = LabelEncoder()
 
     def is_good_enough(self):
@@ -57,27 +57,28 @@ class AdaBoostClassifier:
             error = np.mean(
                 np.average(incorrect, weights=self.w, axis=0))
 
-            # if error <= 0:
-            #     print(error)
-            #     alpha = 0
-            # else:
+            if error <= 0:
+                print(error)
+                alpha = 1
+            else:
 
-            alpha = self.learning_rate * (
-                np.log((1. - error + epsilon) / (error + epsilon)) +
-                np.log(self.n_classes - 1.))
+                alpha = self.learning_rate * (
+                    np.log((1. - error) / (error)) +
+                    np.log(self.n_classes - 1.))
 
-            self.w *= np.exp(alpha * incorrect *
-                             ((self.w > 0) |
-                              (alpha < 0)))
+                self.w *= np.exp(alpha * incorrect *
+                                 ((self.w > 0) |
+                                  (alpha < 0)))
 
-            self.models.append(clf)
-            self.alphas.append(alpha)
+                self.models.append(clf)
+                self.alphas.append(alpha)
 
-            # if error == 0:
-            #     break
+            if error == 0:
+                break
 
             self.w /= self.w.sum()
-            print("round %d/%d" % (iboost + 1, self.n_weakers_limit))
+            print("round %d/%d, error=%f" %
+                  (iboost + 1, self.n_weakers_limit, error))
 
         return self
 
@@ -90,7 +91,26 @@ class AdaBoostClassifier:
         Returns:
             An one-dimension ndarray indicating the scores of differnt samples, which shape should be (n_samples,1).
         '''
-        pass
+        n_classes = self.n_classes
+        classes = self.le.classes_[:, np.newaxis]
+
+        pred = sum((clf.predict(X) == classes).T * alpha
+                   for clf, alpha in zip(self.models,
+                                         self.alphas))
+        # for clf, alpha in zip(self.models, self.alphas):
+        #     print(clf.predict(X) == classes).T * alpha
+        print(self.alphas)
+
+        pred /= sum(self.alphas)
+
+        if n_classes == 2:
+            pred[:, 0] *= -1
+            pred = pred.sum(axis=1)
+            # return self.le.classes_.take(pred > 0, axis=0)
+            return pred
+
+        # return self.le.classes_.take(np.argmax(pred, axis=1), axis=0)
+        return np.argmax(pred, axis=1)
 
     def predict(self, X, threshold=0):
         '''Predict the catagories for geven samples.

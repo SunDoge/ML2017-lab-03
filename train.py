@@ -93,16 +93,17 @@ def test_image():
         np.array(X), np.array(y), test_size=0.33, random_state=42)
 
     print('start training')
+
     clf = AdaBoostClassifier(n_weakers_limit=50)
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
-    print(classification_report(y_test, y_pred, target_names=labels))
 
-    # skclf = SkAdaBoostClassifier(n_estimators=10)
+    with open('report.txt', 'w') as f:
+        print(classification_report(y_test, y_pred, target_names=labels), file=f)
+
+    # skclf = SkAdaBoostClassifier(n_estimators=50)
     # skclf.fit(X_train, y_train)
     # print(classification_report(y_test, skclf.predict(X_test), target_names=labels))
-    # print(np.array(X))
-    # print(np.array(y))
 
 
 def main():
